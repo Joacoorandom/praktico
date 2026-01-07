@@ -124,7 +124,8 @@ export default function CheckoutPage() {
     notes: ""
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transferencia");
-  const [cashInstitution, setCashInstitution] = useState(storeConfig.cashPayment.allowedInstitutions[0] || "");
+  // Tipado explícito para evitar que TS infiera un literal (y falle en onChange).
+  const [cashInstitution, setCashInstitution] = useState<string>(storeConfig.cashPayment.allowedInstitutions[0] || "");
   const [cashCourse, setCashCourse] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "error" | "success">("idle");
   const [submitError, setSubmitError] = useState<string>("");
