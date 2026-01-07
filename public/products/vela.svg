@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="900" height="600" fill="#f6f7fb"/>
+  <rect x="310" y="210" width="280" height="240" rx="40" fill="#ffffff" stroke="#111827" stroke-width="10"/>
+  <path d="M450 110c35 40 35 70 0 110-35-40-35-70 0-110z" fill="#f59e0b" stroke="#111827" stroke-width="8"/>
+  <path d="M450 220v25" stroke="#111827" stroke-width="10" stroke-linecap="round"/>
+  <text x="450" y="520" font-family="ui-sans-serif, system-ui" font-size="40" text-anchor="middle" fill="#111827">Vela</text>
+</svg>
+

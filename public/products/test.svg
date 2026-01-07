@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="900" height="600" fill="#f6f7fb"/>
+  <rect x="140" y="120" width="620" height="360" rx="40" fill="#ffffff" stroke="#111827" stroke-width="10"/>
+  <text x="450" y="330" font-family="ui-sans-serif, system-ui" font-size="48" text-anchor="middle" fill="#111827">test</text>
+</svg>
