@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { storeConfig } from "@/config/store";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -154,6 +155,16 @@ export async function POST(req: Request) {
     );
   }
 
+  let supabase;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Supabase no configurado." },
+      { status: 500 }
+    );
+  }
+
   let payload: OrderPayload;
   try {
     payload = (await req.json()) as OrderPayload;
@@ -164,7 +175,27 @@ export async function POST(req: Request) {
   const v = validate(payload);
   if (!v.ok) return NextResponse.json({ ok: false, error: v.error }, { status: 400 });
 
-  const content = buildDiscordMessage(payload);
+  const { data: createdOrder, error: createError } = await supabase
+    .from("orders")
+    .insert({
+      status: "pending",
+      payload
+    })
+    .select("id")
+    .single();
+
+  if (createError) {
+    return NextResponse.json(
+      { ok: false, error: "No se pudo guardar el pedido." },
+      { status: 500 }
+    );
+  }
+
+  const content = [
+    `ID: ${createdOrder.id}`,
+    "",
+    buildDiscordMessage(payload)
+  ].join("\n");
 
   const resp = await fetch(webhookUrl, {
     method: "POST",
@@ -176,9 +207,12 @@ export async function POST(req: Request) {
   });
 
   if (!resp.ok) {
-    return NextResponse.json({ ok: false, error: "No se pudo enviar el pedido a Discord." }, { status: 502 });
+    return NextResponse.json(
+      { ok: false, error: "No se pudo enviar el pedido a Discord.", stored: true, id: createdOrder.id },
+      { status: 502 }
+    );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: createdOrder.id });
 }
 
