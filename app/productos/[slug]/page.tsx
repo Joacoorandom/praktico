@@ -4,17 +4,40 @@ import { BuyButton } from "@/components/BuyButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductImage } from "@/components/ProductImage";
 import { formatPriceCLP, getProductBySlug, getProducts } from "@/lib/products";
+import { storeConfig } from "@/config/store";
 
 export function generateStaticParams() {
   return getProducts().map((p) => ({ slug: p.slug }));
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://praktico.vercel.app";
+
+function absoluteImageUrl(src: string): string {
+  if (src.startsWith("http")) return src;
+  return `${siteUrl}${src.startsWith("/") ? src : `/${src}`}`;
+}
+
 export function generateMetadata({ params }: { params: { slug: string } }) {
   const p = getProductBySlug(params.slug);
   if (!p) return {};
+  const title = `${p.name} · ${storeConfig.storeName}`;
+  const description = p.description || `${p.name} - ${formatPriceCLP(p.price)}`;
+  const imageUrl = absoluteImageUrl(p.image);
   return {
     title: p.name,
-    description: p.description
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: p.name }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
   };
 }
 

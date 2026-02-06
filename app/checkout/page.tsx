@@ -69,10 +69,13 @@ function buildWhatsappConfirmMessage(params: {
     destinationComuna?: string;
     etaDays?: number | null;
     quoteName?: string;
+    retiroCourse?: string;
   };
 }) {
   const lines: string[] = [];
-  lines.push(`Pedido - ${storeConfig.storeName}`);
+  lines.push("Hola, quería saber detalles de mi pedido.");
+  lines.push("");
+  lines.push(`--- Pedido ${storeConfig.storeName} ---`);
   lines.push("");
   lines.push("Cliente:");
   lines.push(`- Nombre: ${params.customer.name}`);
@@ -98,18 +101,22 @@ function buildWhatsappConfirmMessage(params: {
     lines.push(`Envío: ${formatPriceCLP(params.shippingCost)}`);
   } else {
     lines.push("Entrega: retiro en colegio");
+    if (params.delivery.retiroCourse) lines.push(`- Curso: ${params.delivery.retiroCourse}`);
   }
   lines.push(`Total: ${formatPriceCLP(params.orderTotal)}`);
-  lines.push(`Pago: ${params.payment.method}`);
+  lines.push(`Pago: ${params.payment.method === "transferencia" ? "Transferencia" : "Efectivo"}`);
   if (params.payment.method === "efectivo") {
     lines.push(`- Institución: ${params.payment.cashInstitution || ""}`);
     lines.push(`- Curso: ${params.payment.cashCourse || ""}`);
     lines.push("Retiro: en el colegio, al momento de recibir el dinero.");
   } else {
+    if (params.delivery.method === "retiro_colegio" && params.delivery.retiroCourse) {
+      lines.push(`- Retiro en colegio, curso: ${params.delivery.retiroCourse}`);
+    }
     lines.push("Transferencia: enviar comprobante por este WhatsApp una vez pagado.");
   }
   lines.push("");
-  lines.push("Confirmación: ¿me confirmas la recepción del pedido, por favor?");
+  lines.push("¿Me confirmas la recepción del pedido, por favor?");
   return lines.join("\n");
 }
 
@@ -130,6 +137,7 @@ export default function CheckoutPage() {
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "error" | "success">("idle");
   const [submitError, setSubmitError] = useState<string>("");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro_colegio");
+  const [retiroCourse, setRetiroCourse] = useState("");
   const [destinationComuna, setDestinationComuna] = useState("");
   const [shippingState, setShippingState] = useState<"idle" | "quoting" | "error" | "ready">("idle");
   const [shippingError, setShippingError] = useState("");
@@ -191,12 +199,15 @@ export default function CheckoutPage() {
   const canContinue =
     items.length > 0 && form.name.trim().length > 0 && form.phone.trim().length > 0 && submitState !== "sending";
 
+  const retiroCourseOk =
+    deliveryMethod !== "retiro_colegio" || (paymentMethod === "efectivo" ? cashCourse : retiroCourse).trim().length > 0;
+
   const canSubmit =
     step === "pago" &&
     items.length > 0 &&
     form.name.trim().length > 0 &&
     form.phone.trim().length > 0 &&
-    (paymentMethod === "transferencia" || cashAllowed) &&
+    (paymentMethod === "transferencia" ? retiroCourseOk : cashAllowed) &&
     (deliveryMethod === "retiro_colegio" ||
       (deliveryMethod === "envio_chileexpress" &&
         destinationComuna.trim().length > 0 &&
@@ -220,7 +231,9 @@ export default function CheckoutPage() {
         method: deliveryMethod,
         destinationComuna,
         etaDays: selectedShipping?.diasEntrega ?? null,
-        quoteName: selectedShipping?.nombre
+        quoteName: selectedShipping?.nombre,
+        retiroCourse:
+          deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
       }
     });
     return `https://wa.me/${storeConfig.whatsappPhoneE164}?text=${encodeURIComponent(msg)}`;
@@ -233,6 +246,7 @@ export default function CheckoutPage() {
     paymentMethod,
     cashInstitution,
     cashCourse,
+    retiroCourse,
     deliveryMethod,
     destinationComuna,
     selectedShipping
@@ -288,6 +302,8 @@ export default function CheckoutPage() {
         delivery: {
           method: deliveryMethod,
           destinationComuna: deliveryMethod === "envio_chileexpress" ? destinationComuna : undefined,
+          retiroCourse:
+            deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined,
           shippingCost: deliveryMethod === "envio_chileexpress" ? shippingCost : undefined,
           etaDays: deliveryMethod === "envio_chileexpress" ? selectedShipping?.diasEntrega ?? null : null,
           chileexpress:
@@ -570,7 +586,7 @@ export default function CheckoutPage() {
                     onChange={() => setDeliveryMethod("retiro_colegio")}
                     style={{ width: 18, height: 18 }}
                   />
-                  Retiro en recinto escolar (solo IHLC)
+                  Retiro en colegio (Instituto de Humanidades Luis Campino)
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0 12px" }}>
                   <input
@@ -582,6 +598,18 @@ export default function CheckoutPage() {
                   />
                   Envío a domicilio (ChileExpress)
                 </label>
+
+                {deliveryMethod === "retiro_colegio" ? (
+                  <>
+                    <label htmlFor="retiroCourse">Curso *</label>
+                    <input
+                      id="retiroCourse"
+                      value={retiroCourse}
+                      onChange={(e) => setRetiroCourse(e.target.value)}
+                      placeholder="Ej: 3° Medio A"
+                    />
+                  </>
+                ) : null}
 
                 {deliveryMethod === "envio_chileexpress" ? (
                   <>
@@ -700,31 +728,17 @@ export default function CheckoutPage() {
               Recibimos tu solicitud. Te contactaremos por WhatsApp o correo para confirmar y coordinar.
             </p>
 
-            {paymentMethod === "efectivo" ? (
-              <div className="panel" style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>Confirmación por WhatsApp</div>
-                <div className="muted">
-                  Si quieres acelerar la coordinación, puedes enviar un mensaje de confirmación al WhatsApp del negocio.
-                </div>
-                <div className="btn-row">
-                  <a className="btn btn-primary" href={whatsappConfirmHref}>
-                    Abrir WhatsApp
-                  </a>
-                </div>
+            <div className="panel" style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 800, marginBottom: 6 }}>Enviar pedido por WhatsApp</div>
+              <div className="muted" style={{ marginBottom: 12 }}>
+                Abrí la conversación y enviá el mensaje con los detalles de tu pedido (carrito, total, pago y envío). Así coordinamos la entrega.
               </div>
-            ) : (
-              <div className="panel" style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>Transferencia</div>
-                <div className="muted">
-                  Puedes revisar los datos de transferencia y luego enviar el comprobante por WhatsApp.
-                </div>
-                <div className="btn-row">
-                  <Link className="btn btn-primary" href="/pago">
-                    Ver datos de transferencia
-                  </Link>
-                </div>
+              <div className="btn-row">
+                <a className="btn btn-primary" href={whatsappConfirmHref} target="_blank" rel="noopener noreferrer">
+                  Abrir WhatsApp y enviar mensaje
+                </a>
               </div>
-            )}
+            </div>
 
             <div className="btn-row" style={{ marginTop: 12 }}>
               <Link className="btn" href="/">

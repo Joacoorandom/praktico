@@ -43,9 +43,15 @@ export default function HomePage() {
                   <Link className="btn" href={`/productos/${p.slug}`}>
                     Ver detalle
                   </Link>
-                  <Link className="btn btn-primary" href={`/productos/${p.slug}`}>
-                    Comprar
-                  </Link>
+                  {p.soldOut ? (
+                    <span className="btn btn-primary" style={{ opacity: 0.8, cursor: "default" }}>
+                      Agotado
+                    </span>
+                  ) : (
+                    <Link className="btn btn-primary" href={`/productos/${p.slug}`}>
+                      Comprar
+                    </Link>
+                  )}
                 </div>
               </div>
             </ProductCardReveal>

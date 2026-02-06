@@ -23,6 +23,7 @@ type OrderPayload = {
   delivery: {
     method: "retiro_colegio" | "envio_starken" | "envio_chileexpress";
     destinationComuna?: string;
+    retiroCourse?: string;
     shippingCost?: number; // CLP
     etaDays?: number | null;
     starken?: {
@@ -89,6 +90,13 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
       return { ok: false, error: "Costo de envío inválido." };
     }
   }
+  if (
+    payload.delivery.method === "retiro_colegio" &&
+    payload.payment.method === "transferencia" &&
+    (!payload.delivery.retiroCourse || !String(payload.delivery.retiroCourse).trim())
+  ) {
+    return { ok: false, error: "Falta curso para retiro en colegio." };
+  }
 
   const computedTotal = itemsTotal + (Number.isFinite(shippingCost) ? shippingCost : 0);
   if (Math.abs(computedTotal - payload.total) > 0.0001) return { ok: false, error: "Total no coincide." };
@@ -148,6 +156,11 @@ function buildDiscordMessage(payload: OrderPayload): string {
   } else {
     lines.push("Entrega:");
     lines.push("- Método: retiro en colegio");
+    const course =
+      payload.payment.method === "efectivo"
+        ? payload.payment.cash?.course
+        : payload.delivery.retiroCourse;
+    if (course) lines.push(`- Curso: ${course}`);
     lines.push("");
   }
   lines.push(`Total: ${formatPriceCLP(payload.total)}`);

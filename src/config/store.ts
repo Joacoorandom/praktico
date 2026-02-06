@@ -5,7 +5,7 @@ export const storeConfig = {
 
   // Canales para recibir pedidos (manual)
   orderEmail: "info@praktico.shop",
-  whatsappPhoneE164: "56967225944", // sin "+" y sin espacios. Ej: Chile +56 9 1234 5678 => 56912345678
+  whatsappPhoneE164: "56968615377", // +56 9 6861 5377 - WhatsApp para abrir conversación con el pedido
 
   // Datos de transferencia
   bankTransfer: {
@@ -21,7 +21,7 @@ export const storeConfig = {
   // Pago en efectivo (solo válido para colegios)
   cashPayment: {
     enabled: true,
-    allowedInstitutions: ["Instituto de Humanidades Luis Campino (IHLC)"],
+    allowedInstitutions: ["Instituto de Humanidades Luis Campino"],
     note:
       "El pago en efectivo es válido solo para colegios. El retiro se coordina en el establecimiento y se entrega al momento de recibir el dinero."
   },

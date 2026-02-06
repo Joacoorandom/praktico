@@ -14,6 +14,8 @@ export type Product = {
   gallery?: string[];
   // Opcional: destacado para el panel de ofertas
   featured?: boolean;
+  // Opcional: agotado (no se puede comprar)
+  soldOut?: boolean;
   // Opcional: datos para cotizar envío
   shipping?: {
     lengthCm: number;

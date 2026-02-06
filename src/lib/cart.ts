@@ -36,6 +36,7 @@ export function setCart(items: CartItem[]): void {
 }
 
 export function addToCart(product: Product, quantity = 1): CartItem[] {
+  if (product.soldOut) return getCart();
   const cart = getCart();
   const idx = cart.findIndex((i) => i.product.id === product.id);
   const next = [...cart];
