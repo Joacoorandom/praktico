@@ -122,5 +122,15 @@
     "categories": [
       "general"
     ]
+  },
+  {
+    "id": "p-8",
+    "slug": "tete",
+    "name": "tete",
+    "price": 1212,
+    "image": "/products/placeholder.svg",
+    "description": "",
+    "brand": "praktico",
+    "soldOut": true
   }
 ]
