@@ -136,6 +136,22 @@ export default function CheckoutPage() {
   const [cashCourse, setCashCourse] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "error" | "success">("idle");
   const [submitError, setSubmitError] = useState<string>("");
+  /** Snapshot del pedido recién enviado, para armar el mensaje de WhatsApp con productos y totales. */
+  const [lastSubmittedOrder, setLastSubmittedOrder] = useState<{
+    items: CartItem[];
+    itemsTotal: number;
+    shippingCost: number;
+    orderTotal: number;
+    customer: CustomerForm;
+    payment: { method: PaymentMethod; cashInstitution?: string; cashCourse?: string };
+    delivery: {
+      method: DeliveryMethod;
+      destinationComuna?: string;
+      etaDays?: number | null;
+      quoteName?: string;
+      retiroCourse?: string;
+    };
+  } | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro_colegio");
   const [retiroCourse, setRetiroCourse] = useState("");
   const [destinationComuna, setDestinationComuna] = useState("");
@@ -216,17 +232,13 @@ export default function CheckoutPage() {
     submitState !== "sending";
 
   const whatsappConfirmHref = useMemo(() => {
-    const msg = buildWhatsappConfirmMessage({
+    const data = lastSubmittedOrder ?? {
       items,
       itemsTotal,
       shippingCost,
       orderTotal,
       customer: form,
-      payment: {
-        method: paymentMethod,
-        cashInstitution,
-        cashCourse
-      },
+      payment: { method: paymentMethod, cashInstitution, cashCourse },
       delivery: {
         method: deliveryMethod,
         destinationComuna,
@@ -235,9 +247,11 @@ export default function CheckoutPage() {
         retiroCourse:
           deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
       }
-    });
+    };
+    const msg = buildWhatsappConfirmMessage(data);
     return `https://wa.me/${storeConfig.whatsappPhoneE164}?text=${encodeURIComponent(msg)}`;
   }, [
+    lastSubmittedOrder,
     items,
     itemsTotal,
     shippingCost,
@@ -341,6 +355,22 @@ export default function CheckoutPage() {
       }
 
       setSubmitState("success");
+      setLastSubmittedOrder({
+        items,
+        itemsTotal,
+        shippingCost,
+        orderTotal,
+        customer: form,
+        payment: { method: paymentMethod, cashInstitution, cashCourse },
+        delivery: {
+          method: deliveryMethod,
+          destinationComuna,
+          etaDays: selectedShipping?.diasEntrega ?? null,
+          quoteName: selectedShipping?.nombre,
+          retiroCourse:
+            deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
+        }
+      });
       clearCart();
       setItems([]);
       setStep("enviado");

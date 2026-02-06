@@ -56,6 +56,39 @@ function formatPriceCLP(price: number): string {
   }).format(price);
 }
 
+/** Normaliza texto para comparación (minúsculas, sin tildes). */
+function normalizeForBlocklist(s: string): string {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+/** Términos bloqueados en campos de texto del pedido (nombre, curso, comentarios). */
+const BLOCKED_TERMS = [
+  "nigger",
+  "nigga",
+  "faggot",
+  "fag",
+  "puta",
+  "puto",
+  "maricon",
+  "marica",
+  "concha",
+  "weon",
+  "weona",
+  "hijo de puta",
+  "hdp",
+  "ctm",
+  "culiao",
+  "culia",
+];
+
+function containsBlockedContent(text: string): boolean {
+  const n = normalizeForBlocklist(text);
+  return BLOCKED_TERMS.some((term) => n.includes(term));
+}
+
 function validate(payload: OrderPayload): { ok: true } | { ok: false; error: string } {
   if (!payload || typeof payload !== "object") return { ok: false, error: "Payload inválido." };
   if (!Array.isArray(payload.items) || payload.items.length === 0) return { ok: false, error: "Carrito vacío." };
@@ -96,6 +129,18 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
     (!payload.delivery.retiroCourse || !String(payload.delivery.retiroCourse).trim())
   ) {
     return { ok: false, error: "Falta curso para retiro en colegio." };
+  }
+
+  const textFields = [
+    payload.customer.name,
+    payload.customer.notes,
+    payload.delivery.retiroCourse,
+    payload.payment.cash?.course
+  ].filter(Boolean) as string[];
+  for (const text of textFields) {
+    if (containsBlockedContent(text)) {
+      return { ok: false, error: "El pedido contiene texto no permitido. Revisá nombre, curso y comentarios." };
+    }
   }
 
   const computedTotal = itemsTotal + (Number.isFinite(shippingCost) ? shippingCost : 0);
