@@ -70,7 +70,7 @@
     "id": "p-4",
     "slug": "test",
     "name": "test",
-    "price": 1000,
+    "price": 999,
     "image": "/products/test.svg",
     "description": "Una test",
     "brand": "praktico",
@@ -85,7 +85,8 @@
       "widthCm": 10,
       "heightCm": 10,
       "weightKg": 0.2
-    }
+    },
+    "featured": false
   },
   {
     "id": "p-5",
@@ -107,6 +108,17 @@
     "image": "/products/jose.svg",
     "description": "jose",
     "brand": "praktico",
+    "categories": [
+      "general"
+    ]
+  },
+  {
+    "id": "p-7",
+    "slug": "dexter-morgan",
+    "name": "dexter morgan",
+    "price": 1e+22,
+    "image": "/products/placeholder.svg",
+    "description": "dexter",
     "categories": [
       "general"
     ]
