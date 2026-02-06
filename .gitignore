@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env
+.env.local
+.env.*.local
+*.log
+
+# Token GitHub del admin (se guarda en servidor, no en repo)
+admin-server/data/
