@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "p-1",
+    "slug": "test",
+    "name": "test",
+    "price": 10000,
+    "image": "/products/placeholder.svg",
+    "description": "",
+    "brand": "praktico"
+  }
+]
