@@ -20,6 +20,10 @@ type OrderPayload = {
     address: string;
     notes: string;
   };
+  /** Tipo de compra: virtual (digital) o physical (objeto físico). */
+  orderType?: "virtual" | "physical";
+  /** Si se envía al cliente (send) o se recibe para responder luego (receive). */
+  fulfillment?: "send" | "receive";
   delivery: {
     method: "retiro_colegio" | "envio_starken" | "envio_chileexpress";
     destinationComuna?: string;
@@ -103,6 +107,9 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
     return { ok: false, error: "Método de pago inválido." };
   }
 
+  const orderType = payload.orderType === "virtual" ? "virtual" : "physical";
+  const fulfillment = payload.fulfillment === "receive" ? "receive" : "send";
+
   if (!payload.delivery || typeof payload.delivery !== "object") return { ok: false, error: "Falta método de entrega." };
   const validDelivery =
     payload.delivery.method === "retiro_colegio" ||
@@ -115,7 +122,7 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
 
   const isEnvio = payload.delivery.method === "envio_starken" || payload.delivery.method === "envio_chileexpress";
   const shippingCost = isEnvio ? Number(payload.delivery.shippingCost) : 0;
-  if (payload.delivery.method === "envio_chileexpress" || payload.delivery.method === "envio_starken") {
+  if (orderType === "physical" && (payload.delivery.method === "envio_chileexpress" || payload.delivery.method === "envio_starken")) {
     if (!payload.delivery.destinationComuna || !String(payload.delivery.destinationComuna).trim()) {
       return { ok: false, error: "Falta comuna de destino para envío." };
     }
@@ -124,6 +131,7 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
     }
   }
   if (
+    orderType === "physical" &&
     payload.delivery.method === "retiro_colegio" &&
     payload.payment.method === "transferencia" &&
     (!payload.delivery.retiroCourse || !String(payload.delivery.retiroCourse).trim())
@@ -143,7 +151,7 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
     }
   }
 
-  const computedTotal = itemsTotal + (Number.isFinite(shippingCost) ? shippingCost : 0);
+  const computedTotal = itemsTotal + (orderType === "physical" && Number.isFinite(shippingCost) ? shippingCost : 0);
   if (Math.abs(computedTotal - payload.total) > 0.0001) return { ok: false, error: "Total no coincide." };
 
   if (payload.payment.method === "efectivo") {
@@ -154,7 +162,7 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
       return { ok: false, error: "Pago en efectivo no válido para esa institución." };
     }
     if (!String(course).trim()) return { ok: false, error: "Curso obligatorio para pago en efectivo." };
-    if (payload.delivery.method !== "retiro_colegio") {
+    if (orderType === "physical" && payload.delivery.method !== "retiro_colegio") {
       return { ok: false, error: "Pago en efectivo requiere retiro en colegio." };
     }
   }
@@ -164,9 +172,22 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
 
 function buildDiscordMessage(payload: OrderPayload): string {
   const lines: string[] = [];
+  const orderType = payload.orderType === "virtual" ? "virtual" : "physical";
+  const fulfillment = payload.fulfillment === "receive" ? "receive" : "send";
 
   lines.push(`Nuevo pedido · ${storeConfig.storeName}`);
   lines.push(`Fecha: ${payload.createdAtISO}`);
+  lines.push("");
+
+  lines.push("Tipo de compra:");
+  lines.push(orderType === "virtual" ? "- Objeto virtual (digital)" : "- Objeto físico");
+  if (orderType === "virtual") {
+    lines.push(
+      fulfillment === "send"
+        ? "- Se envía: se enviará por correo/link al cliente."
+        : "- Se recibe: responder luego para coordinar."
+    );
+  }
   lines.push("");
 
   lines.push("Cliente:");
@@ -182,7 +203,7 @@ function buildDiscordMessage(payload: OrderPayload): string {
     lines.push(`- ${i.name} x${i.quantity} = ${formatPriceCLP(i.price * i.quantity)}`);
   }
   lines.push("");
-  if (payload.delivery.method === "envio_chileexpress") {
+  if (orderType === "physical" && payload.delivery.method === "envio_chileexpress") {
     lines.push("Entrega:");
     lines.push("- Método: envío (ChileExpress)");
     lines.push(`- Comuna destino: ${payload.delivery.destinationComuna || ""}`);
@@ -190,7 +211,7 @@ function buildDiscordMessage(payload: OrderPayload): string {
     if (payload.delivery.chileexpress?.nombre) lines.push(`- Opción: ${payload.delivery.chileexpress.nombre}`);
     lines.push(`- Envío: ${formatPriceCLP(Number(payload.delivery.shippingCost) || 0)}`);
     lines.push("");
-  } else if (payload.delivery.method === "envio_starken") {
+  } else if (orderType === "physical" && payload.delivery.method === "envio_starken") {
     lines.push("Entrega:");
     lines.push("- Método: envío (Starken)");
     lines.push(`- Comuna destino: ${payload.delivery.destinationComuna || ""}`);
@@ -198,7 +219,7 @@ function buildDiscordMessage(payload: OrderPayload): string {
     if (payload.delivery.starken?.nombre) lines.push(`- Opción: ${payload.delivery.starken.nombre}`);
     lines.push(`- Envío: ${formatPriceCLP(Number(payload.delivery.shippingCost) || 0)}`);
     lines.push("");
-  } else {
+  } else if (orderType === "physical") {
     lines.push("Entrega:");
     lines.push("- Método: retiro en colegio");
     const course =

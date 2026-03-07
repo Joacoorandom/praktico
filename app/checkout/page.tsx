@@ -17,6 +17,10 @@ type CustomerForm = {
 
 type PaymentMethod = "transferencia" | "efectivo";
 type DeliveryMethod = "retiro_colegio" | "envio_chileexpress";
+/** Tipo de compra: objeto virtual (digital) o físico (se envía/retira). */
+type OrderType = "virtual" | "physical";
+/** Si se envía al cliente o se recibe para responder luego. */
+type FulfillmentType = "send" | "receive";
 
 function calcTotal(items: CartItem[]) {
   return items.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
@@ -71,11 +75,23 @@ function buildWhatsappConfirmMessage(params: {
     quoteName?: string;
     retiroCourse?: string;
   };
+  orderType: OrderType;
+  fulfillment: FulfillmentType;
 }) {
   const lines: string[] = [];
   lines.push("Hola, quería saber detalles de mi pedido.");
   lines.push("");
   lines.push(`--- Pedido ${storeConfig.storeName} ---`);
+  lines.push("");
+  lines.push("Tipo de compra:");
+  lines.push(params.orderType === "virtual" ? "- Objeto virtual (digital)" : "- Objeto físico");
+  if (params.orderType === "virtual") {
+    lines.push(
+      params.fulfillment === "send"
+        ? "- Se envía: te lo enviaremos por correo/link."
+        : "- Se recibe: te responderemos luego para coordinar."
+    );
+  }
   lines.push("");
   lines.push("Cliente:");
   lines.push(`- Nombre: ${params.customer.name}`);
@@ -93,13 +109,13 @@ function buildWhatsappConfirmMessage(params: {
   }
   lines.push("");
   lines.push(`Subtotal productos: ${formatPriceCLP(params.itemsTotal)}`);
-  if (params.delivery.method === "envio_chileexpress") {
+  if (params.orderType === "physical" && params.delivery.method === "envio_chileexpress") {
     lines.push("Entrega: envío (ChileExpress)");
     if (params.delivery.destinationComuna) lines.push(`- Comuna destino: ${params.delivery.destinationComuna}`);
     if (params.delivery.quoteName) lines.push(`- Opción: ${params.delivery.quoteName}`);
     if (params.delivery.etaDays) lines.push(`- Estimación: ${params.delivery.etaDays} día(s)`);
     lines.push(`Envío: ${formatPriceCLP(params.shippingCost)}`);
-  } else {
+  } else if (params.orderType === "physical") {
     lines.push("Entrega: retiro en colegio");
     if (params.delivery.retiroCourse) lines.push(`- Curso: ${params.delivery.retiroCourse}`);
   }
@@ -110,7 +126,7 @@ function buildWhatsappConfirmMessage(params: {
     lines.push(`- Curso: ${params.payment.cashCourse || ""}`);
     lines.push("Retiro: en el colegio, al momento de recibir el dinero.");
   } else {
-    if (params.delivery.method === "retiro_colegio" && params.delivery.retiroCourse) {
+    if (params.orderType === "physical" && params.delivery.method === "retiro_colegio" && params.delivery.retiroCourse) {
       lines.push(`- Retiro en colegio, curso: ${params.delivery.retiroCourse}`);
     }
     lines.push("Transferencia: enviar comprobante por este WhatsApp una vez pagado.");
@@ -151,7 +167,11 @@ export default function CheckoutPage() {
       quoteName?: string;
       retiroCourse?: string;
     };
+    orderType: OrderType;
+    fulfillment: FulfillmentType;
   } | null>(null);
+  const [orderType, setOrderType] = useState<OrderType>("physical");
+  const [fulfillment, setFulfillment] = useState<FulfillmentType>("send");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro_colegio");
   const [retiroCourse, setRetiroCourse] = useState("");
   const [destinationComuna, setDestinationComuna] = useState("");
@@ -198,9 +218,10 @@ export default function CheckoutPage() {
   }, [deliveryMethod, selectedShippingId, shippingOptions]);
 
   const shippingCost = useMemo(() => {
+    if (orderType === "virtual") return 0;
     if (deliveryMethod !== "envio_chileexpress") return 0;
     return Number(selectedShipping?.tarifa) || 0;
-  }, [deliveryMethod, selectedShipping]);
+  }, [orderType, deliveryMethod, selectedShipping]);
 
   const orderTotal = useMemo(() => itemsTotal + shippingCost, [itemsTotal, shippingCost]);
 
@@ -218,17 +239,21 @@ export default function CheckoutPage() {
   const retiroCourseOk =
     deliveryMethod !== "retiro_colegio" || (paymentMethod === "efectivo" ? cashCourse : retiroCourse).trim().length > 0;
 
+  const deliveryOk =
+    orderType === "virtual" ||
+    deliveryMethod === "retiro_colegio" ||
+    (deliveryMethod === "envio_chileexpress" &&
+      destinationComuna.trim().length > 0 &&
+      shippingState === "ready" &&
+      !!selectedShippingId);
+
   const canSubmit =
     step === "pago" &&
     items.length > 0 &&
     form.name.trim().length > 0 &&
     form.phone.trim().length > 0 &&
     (paymentMethod === "transferencia" ? retiroCourseOk : cashAllowed) &&
-    (deliveryMethod === "retiro_colegio" ||
-      (deliveryMethod === "envio_chileexpress" &&
-        destinationComuna.trim().length > 0 &&
-        shippingState === "ready" &&
-        !!selectedShippingId)) &&
+    deliveryOk &&
     submitState !== "sending";
 
   const whatsappConfirmHref = useMemo(() => {
@@ -246,7 +271,9 @@ export default function CheckoutPage() {
         quoteName: selectedShipping?.nombre,
         retiroCourse:
           deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
-      }
+      },
+      orderType,
+      fulfillment
     };
     const msg = buildWhatsappConfirmMessage(data);
     return `https://wa.me/${storeConfig.whatsappPhoneE164}?text=${encodeURIComponent(msg)}`;
@@ -263,7 +290,9 @@ export default function CheckoutPage() {
     retiroCourse,
     deliveryMethod,
     destinationComuna,
-    selectedShipping
+    selectedShipping,
+    orderType,
+    fulfillment
   ]);
 
   async function quoteShipping() {
@@ -313,6 +342,8 @@ export default function CheckoutPage() {
           quantity: i.quantity
         })),
         customer: form,
+        orderType,
+        fulfillment,
         delivery: {
           method: deliveryMethod,
           destinationComuna: deliveryMethod === "envio_chileexpress" ? destinationComuna : undefined,
@@ -369,7 +400,9 @@ export default function CheckoutPage() {
           quoteName: selectedShipping?.nombre,
           retiroCourse:
             deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
-        }
+        },
+        orderType,
+        fulfillment
       });
       clearCart();
       setItems([]);
@@ -514,6 +547,59 @@ export default function CheckoutPage() {
             </p>
 
             <div className="panel" style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 800, marginBottom: 8 }}>Tipo de compra</div>
+              <div className="muted" style={{ marginBottom: 10 }}>
+                Indica si es un objeto virtual (digital) o físico (se envía o retira).
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+                <input
+                  type="radio"
+                  name="orderType"
+                  checked={orderType === "physical"}
+                  onChange={() => setOrderType("physical")}
+                  style={{ width: 18, height: 18 }}
+                />
+                Objeto físico (se envía o se retira)
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+                <input
+                  type="radio"
+                  name="orderType"
+                  checked={orderType === "virtual"}
+                  onChange={() => setOrderType("virtual")}
+                  style={{ width: 18, height: 18 }}
+                />
+                Objeto virtual (digital)
+              </label>
+
+              {orderType === "virtual" ? (
+                <div className="panel" style={{ marginTop: 12, marginBottom: 0 }}>
+                  <div style={{ fontWeight: 800, marginBottom: 8 }}>¿Cómo se entrega?</div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+                    <input
+                      type="radio"
+                      name="fulfillment"
+                      checked={fulfillment === "send"}
+                      onChange={() => setFulfillment("send")}
+                      style={{ width: 18, height: 18 }}
+                    />
+                    Se envía (te lo enviamos por correo o link)
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+                    <input
+                      type="radio"
+                      name="fulfillment"
+                      checked={fulfillment === "receive"}
+                      onChange={() => setFulfillment("receive")}
+                      style={{ width: 18, height: 18 }}
+                    />
+                    Se recibe (te responderemos luego para coordinar)
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="panel" style={{ marginTop: 12 }}>
               <div style={{ fontWeight: 800, marginBottom: 8 }}>Forma de pago</div>
 
               <label style={{ display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
@@ -600,8 +686,8 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Envío: solo aplica para transferencia */}
-            {paymentMethod === "transferencia" ? (
+            {/* Envío: solo aplica para transferencia y objeto físico */}
+            {paymentMethod === "transferencia" && orderType === "physical" ? (
               <div className="panel" style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 800, marginBottom: 8 }}>Envío</div>
                 <div className="muted" style={{ marginBottom: 10 }}>
