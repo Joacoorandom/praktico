@@ -11,15 +11,22 @@ export function Header() {
   const isHome = pathname === "/";
 
   return (
-    <header className={`header ${isHome ? "header--home" : "header--detail"}`}>
+    <header className={`header ${isHome ? "header--home" : ""}`}>
       <div className="container header-inner">
-        <Link className="brand brand-centered" href="/" aria-label={storeConfig.storeName}>
+        <Link className="brand" href="/" aria-label={storeConfig.storeName}>
           <Image className="brand-logo" src={logoNegro} alt="Praktico" priority />
         </Link>
-        <nav className="nav nav-centered" aria-label="Navegación">
-          <Link href="/">Catálogo</Link>
-          <Link href="/como-funciona">Cómo funciona</Link>
-          <Link href="/checkout">Carrito</Link>
+        
+        <nav className="nav" aria-label="Navegación principal">
+          <Link href="/" className={pathname === "/" ? "is-active" : ""}>
+            Catálogo
+          </Link>
+          <Link href="/como-funciona" className={pathname === "/como-funciona" ? "is-active" : ""}>
+            Cómo funciona
+          </Link>
+          <Link href="/checkout" className={pathname === "/checkout" ? "is-active" : ""}>
+            Carrito
+          </Link>
         </nav>
       </div>
     </header>
