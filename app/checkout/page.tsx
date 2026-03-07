@@ -67,7 +67,7 @@ function buildWhatsappConfirmMessage(params: {
   shippingCost: number;
   orderTotal: number;
   customer: CustomerForm;
-  payment: { method: PaymentMethod; cashInstitution?: string; cashCourse?: string };
+  payment: { method: PaymentMethod };
   delivery: {
     method: DeliveryMethod;
     destinationComuna?: string;
@@ -120,17 +120,11 @@ function buildWhatsappConfirmMessage(params: {
     if (params.delivery.retiroCourse) lines.push(`- Curso: ${params.delivery.retiroCourse}`);
   }
   lines.push(`Total: ${formatPriceCLP(params.orderTotal)}`);
-  lines.push(`Pago: ${params.payment.method === "transferencia" ? "Transferencia" : "Efectivo"}`);
-  if (params.payment.method === "efectivo") {
-    lines.push(`- Institución: ${params.payment.cashInstitution || ""}`);
-    lines.push(`- Curso: ${params.payment.cashCourse || ""}`);
-    lines.push("Retiro: en el colegio, al momento de recibir el dinero.");
-  } else {
-    if (params.orderType === "physical" && params.delivery.method === "retiro_colegio" && params.delivery.retiroCourse) {
-      lines.push(`- Retiro en colegio, curso: ${params.delivery.retiroCourse}`);
-    }
-    lines.push("Transferencia: enviar comprobante por este WhatsApp una vez pagado.");
+  lines.push("Pago: Transferencia bancaria");
+  if (params.orderType === "physical" && params.delivery.method === "retiro_colegio" && params.delivery.retiroCourse) {
+    lines.push(`- Retiro en colegio, curso: ${params.delivery.retiroCourse}`);
   }
+  lines.push("Transferencia: enviar comprobante por este WhatsApp una vez pagado.");
   lines.push("");
   lines.push("¿Me confirmas la recepción del pedido, por favor?");
   return lines.join("\n");
@@ -146,10 +140,6 @@ export default function CheckoutPage() {
     address: "",
     notes: ""
   });
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transferencia");
-  // Tipado explícito para evitar que TS infiera un literal (y falle en onChange).
-  const [cashInstitution, setCashInstitution] = useState<string>(storeConfig.cashPayment.allowedInstitutions[0] || "");
-  const [cashCourse, setCashCourse] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "error" | "success">("idle");
   const [submitError, setSubmitError] = useState<string>("");
   /** Snapshot del pedido recién enviado, para armar el mensaje de WhatsApp con productos y totales. */
@@ -159,7 +149,7 @@ export default function CheckoutPage() {
     shippingCost: number;
     orderTotal: number;
     customer: CustomerForm;
-    payment: { method: PaymentMethod; cashInstitution?: string; cashCourse?: string };
+    payment: { method: PaymentMethod };
     delivery: {
       method: DeliveryMethod;
       destinationComuna?: string;
@@ -170,8 +160,6 @@ export default function CheckoutPage() {
     orderType: OrderType;
     fulfillment: FulfillmentType;
   } | null>(null);
-  const [orderType, setOrderType] = useState<OrderType>("physical");
-  const [fulfillment, setFulfillment] = useState<FulfillmentType>("send");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro_colegio");
   const [retiroCourse, setRetiroCourse] = useState("");
   const [destinationComuna, setDestinationComuna] = useState("");
@@ -196,20 +184,14 @@ export default function CheckoutPage() {
   const itemsTotal = useMemo(() => calcTotal(items), [items]);
   const pkg = useMemo(() => calcPackage(items), [items]);
 
-  // Reglas:
-  // - Efectivo: solo retiro en colegio (válido solo para colegios).
-  // - Transferencia: envío ChileExpress o retiro en colegio (IHLC).
-  useEffect(() => {
-    if (paymentMethod === "efectivo") {
-      setDeliveryMethod("retiro_colegio");
-      setShippingState("idle");
-      setShippingOptions([]);
-      setSelectedShippingId(null);
-      setShippingError("");
-    } else {
-      setDeliveryMethod("envio_chileexpress");
-    }
-  }, [paymentMethod]);
+  /** Pedido virtual si todos los ítems del carrito son productos virtuales. No se muestra al usuario. */
+  const isVirtualOrder = useMemo(
+    () => items.length > 0 && items.every((i) => (i.product as { virtual?: boolean }).virtual === true),
+    [items]
+  );
+  const orderType: OrderType = isVirtualOrder ? "virtual" : "physical";
+  const fulfillment: FulfillmentType = "send";
+
 
   const selectedShipping = useMemo(() => {
     if (deliveryMethod !== "envio_chileexpress") return null;
@@ -225,19 +207,15 @@ export default function CheckoutPage() {
 
   const orderTotal = useMemo(() => itemsTotal + shippingCost, [itemsTotal, shippingCost]);
 
-  const cashAllowed = useMemo(() => {
-    return (
-      storeConfig.cashPayment.enabled &&
-      storeConfig.cashPayment.allowedInstitutions.includes(cashInstitution as any) &&
-      cashCourse.trim().length > 0
-    );
-  }, [cashInstitution, cashCourse]);
-
   const canContinue =
-    items.length > 0 && form.name.trim().length > 0 && form.phone.trim().length > 0 && submitState !== "sending";
+    items.length > 0 &&
+    form.name.trim().length > 0 &&
+    form.phone.trim().length > 0 &&
+    form.email.trim().length > 0 &&
+    submitState !== "sending";
 
   const retiroCourseOk =
-    deliveryMethod !== "retiro_colegio" || (paymentMethod === "efectivo" ? cashCourse : retiroCourse).trim().length > 0;
+    deliveryMethod !== "retiro_colegio" || retiroCourse.trim().length > 0;
 
   const deliveryOk =
     orderType === "virtual" ||
@@ -252,8 +230,18 @@ export default function CheckoutPage() {
     items.length > 0 &&
     form.name.trim().length > 0 &&
     form.phone.trim().length > 0 &&
-    (paymentMethod === "transferencia" ? retiroCourseOk : cashAllowed) &&
+    form.email.trim().length > 0 &&
+    retiroCourseOk &&
     deliveryOk &&
+    submitState !== "sending";
+
+  const canSubmitVirtual =
+    step === "datos" &&
+    isVirtualOrder &&
+    items.length > 0 &&
+    form.name.trim().length > 0 &&
+    form.phone.trim().length > 0 &&
+    form.email.trim().length > 0 &&
     submitState !== "sending";
 
   const whatsappConfirmHref = useMemo(() => {
@@ -263,14 +251,13 @@ export default function CheckoutPage() {
       shippingCost,
       orderTotal,
       customer: form,
-      payment: { method: paymentMethod, cashInstitution, cashCourse },
+      payment: { method: "transferencia" as PaymentMethod },
       delivery: {
         method: deliveryMethod,
         destinationComuna,
         etaDays: selectedShipping?.diasEntrega ?? null,
         quoteName: selectedShipping?.nombre,
-        retiroCourse:
-          deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
+        retiroCourse: deliveryMethod === "retiro_colegio" ? retiroCourse : undefined
       },
       orderType,
       fulfillment
@@ -284,9 +271,6 @@ export default function CheckoutPage() {
     shippingCost,
     orderTotal,
     form,
-    paymentMethod,
-    cashInstitution,
-    cashCourse,
     retiroCourse,
     deliveryMethod,
     destinationComuna,
@@ -330,6 +314,59 @@ export default function CheckoutPage() {
     }
   }
 
+  async function submitOrderVirtual() {
+    setSubmitState("sending");
+    setSubmitError("");
+    const total = itemsTotal;
+    try {
+      const payload = {
+        items: items.map((i) => ({
+          id: i.product.id,
+          name: i.product.name,
+          price: i.product.price,
+          quantity: i.quantity
+        })),
+        customer: form,
+        orderType: "virtual" as OrderType,
+        fulfillment: "send" as FulfillmentType,
+        delivery: { method: "retiro_colegio" as DeliveryMethod },
+        payment: { method: "transferencia" as PaymentMethod },
+        total,
+        createdAtISO: new Date().toISOString()
+      };
+
+      const resp = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = (await resp.json()) as { ok: boolean; error?: string };
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || "No se pudo enviar el pedido.");
+      }
+
+      setSubmitState("success");
+      setLastSubmittedOrder({
+        items,
+        itemsTotal,
+        shippingCost: 0,
+        orderTotal: total,
+        customer: form,
+        payment: { method: "transferencia" },
+        delivery: { method: "retiro_colegio" },
+        orderType: "virtual",
+        fulfillment: "send"
+      });
+      clearCart();
+      setItems([]);
+      setStep("enviado");
+    } catch (e: any) {
+      setSubmitState("error");
+      setSubmitError(e?.message || "Error al enviar.");
+    }
+  }
+
   async function submitOrder() {
     setSubmitState("sending");
     setSubmitError("");
@@ -347,8 +384,7 @@ export default function CheckoutPage() {
         delivery: {
           method: deliveryMethod,
           destinationComuna: deliveryMethod === "envio_chileexpress" ? destinationComuna : undefined,
-          retiroCourse:
-            deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined,
+          retiroCourse: deliveryMethod === "retiro_colegio" ? retiroCourse : undefined,
           shippingCost: deliveryMethod === "envio_chileexpress" ? shippingCost : undefined,
           etaDays: deliveryMethod === "envio_chileexpress" ? selectedShipping?.diasEntrega ?? null : null,
           chileexpress:
@@ -360,16 +396,7 @@ export default function CheckoutPage() {
                 }
               : undefined
         },
-        payment: {
-          method: paymentMethod,
-          cash:
-            paymentMethod === "efectivo"
-              ? {
-                  institution: cashInstitution,
-                  course: cashCourse
-                }
-              : undefined
-        },
+        payment: { method: "transferencia" as PaymentMethod },
         total: orderTotal,
         createdAtISO: new Date().toISOString()
       };
@@ -392,14 +419,13 @@ export default function CheckoutPage() {
         shippingCost,
         orderTotal,
         customer: form,
-        payment: { method: paymentMethod, cashInstitution, cashCourse },
+        payment: { method: "transferencia" },
         delivery: {
           method: deliveryMethod,
           destinationComuna,
           etaDays: selectedShipping?.diasEntrega ?? null,
           quoteName: selectedShipping?.nombre,
-          retiroCourse:
-            deliveryMethod === "retiro_colegio" ? (paymentMethod === "efectivo" ? cashCourse : retiroCourse) : undefined
+          retiroCourse: deliveryMethod === "retiro_colegio" ? retiroCourse : undefined
         },
         orderType,
         fulfillment
@@ -420,7 +446,7 @@ export default function CheckoutPage() {
           ← Seguir comprando
         </Link>
         <h1 style={{ marginTop: 10 }}>Carrito / Pedido</h1>
-        <p className="muted" style={{ marginTop: 6 }}>Completa tus datos, continúa y elige cómo vas a pagar.</p>
+        <p className="muted" style={{ marginTop: 6 }}>Completa tus datos. Solo aceptamos pago por transferencia bancaria.</p>
 
         {items.length === 0 ? (
           <div className="panel" style={{ marginTop: 12 }}>
@@ -503,7 +529,7 @@ export default function CheckoutPage() {
           <>
             <h2 style={{ margin: 0 }}>Tus datos</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Estos datos se enviarán al negocio y se usará tu teléfono para coordinar por WhatsApp.
+              Estos datos se enviarán al negocio. Solo aceptamos transferencia bancaria; te enviaremos los datos para pagar.
             </p>
 
             <label htmlFor="name">Nombre *</label>
@@ -512,12 +538,13 @@ export default function CheckoutPage() {
             <label htmlFor="phone">Teléfono *</label>
             <input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
 
-            <label htmlFor="email">Email (opcional)</label>
+            <label htmlFor="email">Email *</label>
             <input
               id="email"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="Para enviarte el comprobante y coordinar"
             />
 
             <label htmlFor="address">Dirección (opcional)</label>
@@ -526,168 +553,76 @@ export default function CheckoutPage() {
             <label htmlFor="notes">Comentarios (opcional)</label>
             <textarea id="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
+            {submitState === "error" ? (
+              <div className="panel" style={{ marginTop: 12, borderColor: "var(--border)" }}>
+                <div style={{ fontWeight: 800 }}>No se pudo enviar</div>
+                <div className="muted" style={{ marginTop: 6 }}>{submitError}</div>
+              </div>
+            ) : null}
+
             <div className="btn-row" style={{ marginTop: 12 }}>
-              <button
-                type="button"
-                className={`btn btn-primary ${canContinue ? "" : "disabled"}`}
-                onClick={() => {
-                  if (!canContinue) return;
-                  setStep("pago");
-                }}
-              >
-                Continuar
-              </button>
+              {isVirtualOrder ? (
+                <button
+                  type="button"
+                  className={`btn btn-primary ${canSubmitVirtual ? "" : "disabled"}`}
+                  onClick={() => {
+                    if (!canSubmitVirtual) return;
+                    submitOrderVirtual();
+                  }}
+                  disabled={submitState === "sending"}
+                >
+                  {submitState === "sending" ? "Enviando..." : "Enviar datos"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`btn btn-primary ${canContinue ? "" : "disabled"}`}
+                  onClick={() => {
+                    if (!canContinue) return;
+                    setStep("pago");
+                  }}
+                >
+                  Continuar
+                </button>
+              )}
             </div>
           </>
         ) : step === "pago" ? (
           <>
-            <h2 style={{ margin: 0 }}>Pago</h2>
+            <h2 style={{ margin: 0 }}>Pago por transferencia</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Puedes pagar en efectivo o por transferencia. Efectivo solo es válido para colegios. Si pagas por transferencia y eres del IHLC, puedes acordar el retiro dentro del recinto escolar.
+              Solo aceptamos transferencia bancaria. Si eres del IHLC puedes acordar retiro en el colegio; si no, envío por ChileExpress.
             </p>
 
             <div className="panel" style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 800, marginBottom: 8 }}>Tipo de compra</div>
-              <div className="muted" style={{ marginBottom: 10 }}>
-                Indica si es un objeto virtual (digital) o físico (se envía o retira).
+              <div style={{ fontWeight: 800, marginBottom: 8 }}>Datos para transferir</div>
+              <div className="muted">
+                <div>
+                  <strong>Banco:</strong> {storeConfig.bankTransfer.bankName}
+                </div>
+                <div>
+                  <strong>Tipo de cuenta:</strong> {storeConfig.bankTransfer.accountType}
+                </div>
+                <div>
+                  <strong>N° de cuenta:</strong> {storeConfig.bankTransfer.accountNumber}
+                </div>
+                <div>
+                  <strong>RUT:</strong> {storeConfig.bankTransfer.rut}
+                </div>
+                <div>
+                  <strong>Titular:</strong> {storeConfig.bankTransfer.accountHolder}
+                </div>
+                <div>
+                  <strong>Email:</strong> {storeConfig.bankTransfer.email}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Nota:</strong> {storeConfig.bankTransfer.note}
+                </div>
               </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
-                <input
-                  type="radio"
-                  name="orderType"
-                  checked={orderType === "physical"}
-                  onChange={() => setOrderType("physical")}
-                  style={{ width: 18, height: 18 }}
-                />
-                Objeto físico (se envía o se retira)
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
-                <input
-                  type="radio"
-                  name="orderType"
-                  checked={orderType === "virtual"}
-                  onChange={() => setOrderType("virtual")}
-                  style={{ width: 18, height: 18 }}
-                />
-                Objeto virtual (digital)
-              </label>
-
-              {orderType === "virtual" ? (
-                <div className="panel" style={{ marginTop: 12, marginBottom: 0 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 8 }}>¿Cómo se entrega?</div>
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
-                    <input
-                      type="radio"
-                      name="fulfillment"
-                      checked={fulfillment === "send"}
-                      onChange={() => setFulfillment("send")}
-                      style={{ width: 18, height: 18 }}
-                    />
-                    Se envía (te lo enviamos por correo o link)
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
-                    <input
-                      type="radio"
-                      name="fulfillment"
-                      checked={fulfillment === "receive"}
-                      onChange={() => setFulfillment("receive")}
-                      style={{ width: 18, height: 18 }}
-                    />
-                    Se recibe (te responderemos luego para coordinar)
-                  </label>
-                </div>
-              ) : null}
             </div>
 
-            <div className="panel" style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 800, marginBottom: 8 }}>Forma de pago</div>
-
-              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === "transferencia"}
-                  onChange={() => setPaymentMethod("transferencia")}
-                  style={{ width: 18, height: 18 }}
-                />
-                Transferencia
-              </label>
-
-              <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === "efectivo"}
-                  onChange={() => setPaymentMethod("efectivo")}
-                  style={{ width: 18, height: 18 }}
-                />
-                Efectivo (solo válido para colegios)
-              </label>
-
-              {paymentMethod === "transferencia" ? (
-                <div className="panel" style={{ marginTop: 12 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 8 }}>Datos de transferencia</div>
-                  <div className="muted">
-                    <div>
-                      <strong>Banco:</strong> {storeConfig.bankTransfer.bankName}
-                    </div>
-                    <div>
-                      <strong>Tipo de cuenta:</strong> {storeConfig.bankTransfer.accountType}
-                    </div>
-                    <div>
-                      <strong>N° de cuenta:</strong> {storeConfig.bankTransfer.accountNumber}
-                    </div>
-                    <div>
-                      <strong>RUT:</strong> {storeConfig.bankTransfer.rut}
-                    </div>
-                    <div>
-                      <strong>Titular:</strong> {storeConfig.bankTransfer.accountHolder}
-                    </div>
-                    <div>
-                      <strong>Email:</strong> {storeConfig.bankTransfer.email}
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Nota:</strong> {storeConfig.bankTransfer.note}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="panel" style={{ marginTop: 12 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 6 }}>Pago en efectivo</div>
-                  <div className="muted">{storeConfig.cashPayment.note}</div>
-
-                  <label htmlFor="institution">Colegio *</label>
-                  <select
-                    id="institution"
-                    value={cashInstitution}
-                    onChange={(e) => setCashInstitution(e.target.value)}
-                    style={{
-                      width: "100%",
-                      background: "transparent",
-                      border: "1px solid var(--border)",
-                      padding: "10px 12px",
-                      borderRadius: 12
-                    }}
-                  >
-                    {storeConfig.cashPayment.allowedInstitutions.map((inst) => (
-                      <option key={inst} value={inst}>
-                        {inst}
-                      </option>
-                    ))}
-                  </select>
-
-                  <label htmlFor="course">Curso *</label>
-                  <input id="course" value={cashCourse} onChange={(e) => setCashCourse(e.target.value)} />
-
-                  <div className="muted" style={{ marginTop: 10 }}>
-                    Retiro en el colegio, al momento de recibir el dinero. Te confirmaremos por WhatsApp después de revisar el pedido.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Envío: solo aplica para transferencia y objeto físico */}
-            {paymentMethod === "transferencia" && orderType === "physical" ? (
+            {/* Envío: solo para objeto físico */}
+            {orderType === "physical" ? (
               <div className="panel" style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 800, marginBottom: 8 }}>Envío</div>
                 <div className="muted" style={{ marginBottom: 10 }}>
@@ -839,15 +774,15 @@ export default function CheckoutPage() {
           </>
         ) : (
           <>
-            <h2 style={{ margin: 0 }}>Pedido enviado</h2>
+            <h2 style={{ margin: 0 }}>Datos enviados. Ahora debes transferir</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Recibimos tu solicitud. Te contactaremos por WhatsApp o correo para confirmar y coordinar.
+              Recibimos tu pedido. Realizá la transferencia con los datos que te mostramos y luego enviá el mensaje por WhatsApp para que podamos confirmar y coordinar la entrega.
             </p>
 
             <div className="panel" style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 800, marginBottom: 6 }}>Enviar pedido por WhatsApp</div>
+              <div style={{ fontWeight: 800, marginBottom: 6 }}>Enviar mensaje por WhatsApp</div>
               <div className="muted" style={{ marginBottom: 12 }}>
-                Abrí la conversación y enviá el mensaje con los detalles de tu pedido (carrito, total, pago y envío). Así coordinamos la entrega.
+                Abrí el enlace y enviá el mensaje con los detalles de tu pedido. Así confirmamos la transferencia y coordinamos.
               </div>
               <div className="btn-row">
                 <a className="btn btn-primary" href={whatsappConfirmHref} target="_blank" rel="noopener noreferrer">

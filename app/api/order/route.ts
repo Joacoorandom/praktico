@@ -101,6 +101,7 @@ function validate(payload: OrderPayload): { ok: true } | { ok: false; error: str
   if (!payload.customer || typeof payload.customer !== "object") return { ok: false, error: "Faltan datos del cliente." };
   if (!String(payload.customer.name || "").trim()) return { ok: false, error: "Nombre obligatorio." };
   if (!String(payload.customer.phone || "").trim()) return { ok: false, error: "Teléfono obligatorio." };
+  if (!String(payload.customer.email || "").trim()) return { ok: false, error: "Email obligatorio." };
 
   if (!payload.payment || typeof payload.payment !== "object") return { ok: false, error: "Falta método de pago." };
   if (payload.payment.method !== "transferencia" && payload.payment.method !== "efectivo") {

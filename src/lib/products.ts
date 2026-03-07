@@ -16,6 +16,8 @@ export type Product = {
   featured?: boolean;
   // Opcional: agotado (no se puede comprar)
   soldOut?: boolean;
+  // Opcional: producto virtual/digital (solo datos + transferencia, sin envío)
+  virtual?: boolean;
   // Opcional: datos para cotizar envío
   shipping?: {
     lengthCm: number;
