@@ -776,13 +776,13 @@ export default function CheckoutPage() {
           <>
             <h2 style={{ margin: 0 }}>Datos enviados. Ahora debes transferir</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Recibimos tu pedido. Realizá la transferencia con los datos que te mostramos y luego enviá el mensaje por WhatsApp para que podamos confirmar y coordinar la entrega.
+              Recibimos tu pedido. Realiza la transferencia con los datos que te mostramos y luego envía el mensaje por WhatsApp para que podamos confirmar y coordinar la entrega.
             </p>
 
             <div className="panel" style={{ marginTop: 12 }}>
               <div style={{ fontWeight: 800, marginBottom: 6 }}>Enviar mensaje por WhatsApp</div>
               <div className="muted" style={{ marginBottom: 12 }}>
-                Abrí el enlace y enviá el mensaje con los detalles de tu pedido. Así confirmamos la transferencia y coordinamos.
+                Abre el enlace y envía el mensaje con los detalles de tu pedido. Así confirmamos la transferencia y coordinamos.
               </div>
               <div className="btn-row">
                 <a className="btn btn-primary" href={whatsappConfirmHref} target="_blank" rel="noopener noreferrer">
