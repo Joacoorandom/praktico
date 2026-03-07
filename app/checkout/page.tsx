@@ -328,7 +328,7 @@ export default function CheckoutPage() {
             {step === "datos" && (
               <div className="checkout-section">
                 <h2 className="section-label">Tus datos</h2>
-                <div className="form-grid">
+                <div className="form-grid" style={{ gridTemplateColumns: isVirtualOrder ? "1fr 1fr" : undefined }}>
                   <div className="form-group">
                     <label>Nombre completo *</label>
                     <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ej: María González" />
@@ -341,14 +341,16 @@ export default function CheckoutPage() {
                     <label>Email *</label>
                     <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="tu@email.com" />
                   </div>
-                  <div className="form-group">
-                    <label>Dirección (opcional)</label>
-                    <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Para envíos" />
-                  </div>
+                  {!isVirtualOrder && (
+                    <div className="form-group">
+                      <label>Dirección (opcional)</label>
+                      <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Para envíos" />
+                    </div>
+                  )}
                 </div>
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Notas (opcional)</label>
-                  <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Alguna indicación especial..." rows={3} />
+                  <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder={isVirtualOrder ? "Alguna indicación especial para la entrega digital..." : "Alguna indicación especial..."} rows={3} />
                 </div>
 
                 {isVirtualOrder ? (

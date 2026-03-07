@@ -86,23 +86,36 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             <BuyButton product={p} />
           </div>
 
-          {/* Info de envío */}
-          <div className="product-shipping-info">
-            <div className="shipping-info-row">
-              <span className="shipping-icon">🚚</span>
-              <div>
-                <strong>Envío rápido</strong>
-                <span className="muted">1-3 días hábiles</span>
+          {/* Info de envío - solo para productos físicos */}
+          {!p.virtual && (
+            <div className="product-shipping-info">
+              <div className="shipping-info-row">
+                <span className="shipping-icon">🚚</span>
+                <div>
+                  <strong>Envío rápido</strong>
+                  <span className="muted">1-3 días hábiles</span>
+                </div>
+              </div>
+              <div className="shipping-info-row">
+                <span className="shipping-icon">📍</span>
+                <div>
+                  <strong>Retiro disponible</strong>
+                  <span className="muted">Instituto de Humanidades Luis Campino</span>
+                </div>
               </div>
             </div>
-            <div className="shipping-info-row">
-              <span className="shipping-icon">📍</span>
-              <div>
-                <strong>Retiro disponible</strong>
-                <span className="muted">Instituto de Humanidades Luis Campino</span>
+          )}
+          {p.virtual && (
+            <div className="product-shipping-info">
+              <div className="shipping-info-row">
+                <span className="shipping-icon">📧</span>
+                <div>
+                  <strong>Entrega digital</strong>
+                  <span className="muted">Recibirás el producto por email después de confirmar el pago</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Galería adicional */}
