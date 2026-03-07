@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BuyButton } from "@/components/BuyButton";
 import { ProductGallery } from "@/components/ProductGallery";
-import { ProductImage } from "@/components/ProductImage";
 import { formatPriceCLP, getProductBySlug, getProducts } from "@/lib/products";
+import { getBrandName, getCategoryNames } from "@/lib/taxonomy";
 import { storeConfig } from "@/config/store";
 
 export function generateStaticParams() {
@@ -46,58 +46,79 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!p) notFound();
 
   const gallery = p.gallery && p.gallery.length > 0 ? p.gallery : [];
+  const allImages = [p.image, ...gallery.filter((s) => s && s !== p.image)];
 
   return (
-    <div className="product">
-      <div className="card product-gallery-card">
-        <ProductGallery mainImage={p.image} gallery={gallery} name={p.name} />
-      </div>
+    <div className="product-page">
+      <div className="product-container">
+        {/* Breadcrumb */}
+        <nav className="product-breadcrumb">
+          <Link href="/">Catálogo</Link>
+          <span>/</span>
+          <span>{p.name}</span>
+        </nav>
 
-      <div className="card product-card">
-        <Link className="muted" href="/">
-          ← Volver al catálogo
-        </Link>
-        <h1 style={{ marginTop: 10 }}>{p.name}</h1>
-        <div className="price" style={{ fontSize: 22 }}>
-          {formatPriceCLP(p.price)}
-        </div>
-        <p className="muted" style={{ marginTop: 10 }}>
-          {p.description}
-        </p>
-
-        <div className="btn-row">
-          <BuyButton product={p} />
+        {/* Imagen principal */}
+        <div className="product-main-image">
+          <ProductGallery 
+            mainImage={p.image} 
+            gallery={gallery} 
+            name={p.name} 
+          />
         </div>
 
-        <div className="panel" style={{ marginTop: 14 }}>
-          <div style={{ fontWeight: 800, marginBottom: 10 }}>Tiempo estimado de envío</div>
-          <div className="eta">
-            <div className="eta-row">
-              <span className="eta-label">Preparación</span>
-              <span className="eta-bar" aria-hidden="true" />
-              <span className="eta-value">0–1 día</span>
-            </div>
-            <div className="eta-row">
-              <span className="eta-label">Envío</span>
-              <span className="eta-bar" aria-hidden="true" />
-              <span className="eta-value">1–3 días</span>
-            </div>
-            <div className="eta-note muted">Varía según comuna y disponibilidad.</div>
+        {/* Info del producto */}
+        <div className="product-info">
+          <div className="product-meta">
+            {[getBrandName(p.brand), ...getCategoryNames(p.categories)]
+              .filter(Boolean)
+              .map((tag, i) => (
+                <span key={i} className="product-tag">{tag}</span>
+              ))}
           </div>
-        </div>
 
-        <div className="panel" style={{ marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 10 }}>Más fotos</div>
-          <div className="thumb-grid" aria-label="Galería del producto">
-            {(p.gallery && p.gallery.length > 0 ? p.gallery : [p.image]).map((src, idx) => (
-              <div key={`${src}-${idx}`} className="thumb">
-                <ProductImage className="img" src={src} alt={`${p.name} foto ${idx + 1}`} fill />
+          <h1 className="product-name">{p.name}</h1>
+          <div className="product-price">{formatPriceCLP(p.price)}</div>
+
+          <p className="product-description">{p.description}</p>
+
+          <div className="product-actions">
+            <BuyButton product={p} />
+          </div>
+
+          {/* Info de envío */}
+          <div className="product-shipping-info">
+            <div className="shipping-info-row">
+              <span className="shipping-icon">🚚</span>
+              <div>
+                <strong>Envío rápido</strong>
+                <span className="muted">1-3 días hábiles</span>
               </div>
-            ))}
+            </div>
+            <div className="shipping-info-row">
+              <span className="shipping-icon">📍</span>
+              <div>
+                <strong>Retiro disponible</strong>
+                <span className="muted">Instituto de Humanidades Luis Campino</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Galería adicional */}
+        {allImages.length > 1 && (
+          <div className="product-gallery-section">
+            <h3 className="section-label">Galería</h3>
+            <div className="product-thumbs">
+              {allImages.map((src, idx) => (
+                <div key={idx} className="product-thumb">
+                  <img src={src} alt={`${p.name} ${idx + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

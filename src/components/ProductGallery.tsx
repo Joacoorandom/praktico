@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ProductImage } from "@/components/ProductImage";
 
 type ProductGalleryProps = {
   /** Imagen principal */
@@ -29,14 +28,11 @@ export function ProductGallery({ mainImage, gallery, name }: ProductGalleryProps
   return (
     <div className="product-gallery">
       <div className="product-gallery-main">
-        <ProductImage
+        <img
           key={current}
-          className="img product-gallery-img"
           src={current}
           alt={`${name} - foto ${index + 1}`}
-          width={900}
-          height={600}
-          priority
+          style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
         />
         {allImages.length > 1 && (
           <>
