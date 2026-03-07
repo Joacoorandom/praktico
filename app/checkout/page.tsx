@@ -99,11 +99,11 @@ export default function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro_colegio");
   const [retiroCourse, setRetiroCourse] = useState("");
   const [destinationComuna, setDestinationComuna] = useState("");
-  const [shippingState, setShippingState] = useState<"idle" | "quoting" | "error" | "ready">("idle");
+  const [shippingState, setShippingState] = useState<string>("idle");
   const [shippingError, setShippingError] = useState("");
   const [shippingOptions, setShippingOptions] = useState<Array<any>>([]);
   const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
-  const [submitState, setSubmitState] = useState<"idle" | "sending" | "error" | "success">("idle");
+  const [submitState, setSubmitState] = useState<string>("idle");
   const [submitError, setSubmitError] = useState<string>("");
   const [lastSubmittedOrder, setLastSubmittedOrder] = useState<any>(null);
 
