@@ -89,9 +89,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         <div className="panel" style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Más fotos</div>
           <div className="thumb-grid" aria-label="Galería del producto">
-            {(p.gallery && p.gallery.length > 0 ? p.gallery : [p.image, p.image, p.image]).map((src, idx) => (
+            {(p.gallery && p.gallery.length > 0 ? p.gallery : [p.image]).map((src, idx) => (
               <div key={`${src}-${idx}`} className="thumb">
-                <ProductImage className="img" src={src} alt={`${p.name} foto ${idx + 1}`} width={900} height={600} />
+                <ProductImage className="img" src={src} alt={`${p.name} foto ${idx + 1}`} fill />
               </div>
             ))}
           </div>

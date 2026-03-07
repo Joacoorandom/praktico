@@ -51,8 +51,7 @@ export function OffersPanel({ products }: { products: Product[] }) {
                   className="img"
                   src={p.image}
                   alt={p.name}
-                  width={280}
-                  height={280}
+                  fill
                 />
               </div>
               <div className="offers-panel-card-body">

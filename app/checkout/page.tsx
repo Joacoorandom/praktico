@@ -241,7 +241,52 @@ export default function CheckoutPage() {
         <h1 className="checkout-title">Tu pedido</h1>
         <p className="checkout-subtitle">Solo aceptamos pago por transferencia bancaria</p>
 
-        {items.length === 0 ? (
+        {/* PASO 3: Confirmación - Siempre se muestra primero si estamos en "enviado" */}
+        {step === "enviado" && lastSubmittedOrder ? (
+          <div className="checkout-section text-center" style={{ padding: "48px 24px" }}>
+            <div style={{ 
+              width: "80px", 
+              height: "80px", 
+              margin: "0 auto 24px",
+              background: "#22c55e",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "40px",
+              color: "white"
+            }}>✓</div>
+            <h2 style={{ margin: "0 0 8px", fontSize: "1.5rem" }}>¡Pedido enviado!</h2>
+            <p className="muted" style={{ marginBottom: 32, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}>
+              Realiza la transferencia y envíanos el comprobante por WhatsApp para confirmar tu compra.
+            </p>
+            
+            <div className="panel" style={{ marginBottom: 24, textAlign: "left" }}>
+              <h4 style={{ margin: "0 0 16px", fontSize: "1rem" }}>Resumen del pedido</h4>
+              <div style={{ display: "grid", gap: "8px", fontSize: "14px", marginBottom: 16 }}>
+                {lastSubmittedOrder.items?.map((i: CartItem, idx: number) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>{i.product.name} x{i.quantity}</span>
+                    <span>{formatPriceCLP(i.product.price * i.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12, display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
+                <span>Total</span>
+                <span>{formatPriceCLP(lastSubmittedOrder.orderTotal)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+              <a className="btn btn-primary btn-lg" href={whatsappHref} target="_blank" rel="noopener noreferrer" style={{ minWidth: 280 }}>
+                Enviar comprobante por WhatsApp →
+              </a>
+              <Link className="btn" href="/" style={{ minWidth: 280 }}>
+                ← Volver al catálogo
+              </Link>
+            </div>
+          </div>
+        ) : items.length === 0 ? (
           <div className="panel text-center" style={{ padding: "48px 24px" }}>
             <div style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: 8 }}>Tu carrito está vacío</div>
             <p className="muted" style={{ marginBottom: 24 }}>Agrega productos desde el catálogo</p>
@@ -397,22 +442,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Paso 3: Confirmación */}
-            {step === "enviado" && (
-              <div className="checkout-section text-center" style={{ padding: "48px 24px" }}>
-                <div style={{ fontSize: "2rem", marginBottom: 16 }}>✓</div>
-                <h2 style={{ margin: "0 0 8px" }}>Pedido enviado</h2>
-                <p className="muted" style={{ marginBottom: 32, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}>
-                  Realiza la transferencia y envíanos el comprobante por WhatsApp para confirmar.
-                </p>
-                <a className="btn btn-primary btn-lg" href={whatsappHref} target="_blank" rel="noopener noreferrer" style={{ marginBottom: 16 }}>
-                  Enviar comprobante por WhatsApp
-                </a>
-                <div>
-                  <Link className="btn" href="/">← Volver al catálogo</Link>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

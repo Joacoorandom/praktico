@@ -199,13 +199,21 @@ main.container{
   background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.04) 100%);
   pointer-events: none;
 }
-.card .img-wrap img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.card .img-wrap img,
+.card .img-wrap > span > img,
+.card .img-wrap [data-nimg]{
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
   transition: transform .5s ease;
+  display: block !important;
 }
-.card:hover .img-wrap img{
+.card:hover .img-wrap img,
+.card:hover .img-wrap > span > img,
+.card:hover .img-wrap [data-nimg]{
   transform: scale(1.03);
 }
 
@@ -810,4 +818,47 @@ textarea{
 }
 .offers-panel-card:hover .offers-panel-card-cta{
   color: var(--text);
+}
+
+/* ----- Galería de Producto ----- */
+.thumb-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.thumb{
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  position: relative;
+}
+.thumb img,
+.thumb > span > img,
+.thumb [data-nimg]{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+/* ----- Galería Principal de Producto ----- */
+.product-gallery-card{
+  padding: 0;
+  overflow: hidden;
+}
+.product-gallery-main{
+  aspect-ratio: 4/3;
+  position: relative;
+  background: var(--surface-2);
+}
+.product-gallery-main img,
+.product-gallery-main > span > img,
+.product-gallery-main [data-nimg]{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
 }

@@ -107,7 +107,7 @@ export function CatalogWithFilters({ products, brands, categories }: Props) {
         {filteredProducts.map((p, i) => (
           <ProductCardReveal key={p.id} index={i}>
             <Link href={`/productos/${p.slug}`} aria-label={`Ver ${p.name}`} className="img-wrap">
-              <ProductImage className="img" src={p.image} alt={p.name} width={900} height={600} />
+              <ProductImage className="img" src={p.image} alt={p.name} fill />
             </Link>
             <div className="card-body">
               <h2 className="card-title">
