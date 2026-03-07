@@ -8,8 +8,8 @@ export const metadata = {
 
 export default function ComoFuncionaPage() {
   return (
-    <div className="product" style={{ alignItems: "start", maxWidth: 720, margin: "0 auto" }}>
-      <div className="card product-card">
+    <div className="content-page">
+      <article className="content-page__card">
         <Link className="muted" href="/">
           ← Volver al catálogo
         </Link>
@@ -65,7 +65,7 @@ export default function ComoFuncionaPage() {
             Ir al carrito
           </Link>
         </div>
-      </div>
+      </article>
     </div>
   );
 }

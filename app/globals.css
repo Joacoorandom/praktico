@@ -272,6 +272,20 @@ main{
   font-size: 12px;
 }
 
+/* ----- Página de contenido (ej. Cómo funciona) ----- */
+.content-page{
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+.content-page__card{
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
 /* ----- Producto (detalle) ----- */
 .product{ display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: start; }
 @media (max-width: 900px){ .product{ grid-template-columns: 1fr; } }
