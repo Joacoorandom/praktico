@@ -18,6 +18,7 @@ export function Header() {
         </Link>
         <nav className="nav nav-centered" aria-label="Navegación">
           <Link href="/">Catálogo</Link>
+          <Link href="/como-funciona">Cómo funciona</Link>
           <Link href="/checkout">Carrito</Link>
         </nav>
       </div>
