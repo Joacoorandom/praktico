@@ -194,6 +194,59 @@ main{
   animation: slideInLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
 
+/* ----- Catálogo con filtros (marcas y categorías) ----- */
+.catalog-filters__bar{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 32px;
+  margin-bottom: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.catalog-filters__group{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.catalog-filters__label{
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.catalog-filters__buttons{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.catalog-filters__btn{
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.catalog-filters__btn:hover{
+  border-color: var(--accent);
+  background: var(--hover-bg);
+}
+.catalog-filters__btn.is-active{
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.catalog-filters__count{
+  margin-bottom: 16px;
+  min-height: 24px;
+}
+
 .grid{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
