@@ -1,4 +1,12 @@
 [
-  { "id": "c-1", "slug": "general", "name": "General" }
+  {
+    "id": "c-1",
+    "slug": "general",
+    "name": "General"
+  },
+  {
+    "id": "c-2",
+    "slug": "objetos-de-juegos",
+    "name": "Objetos De Juegos"
+  }
 ]
-

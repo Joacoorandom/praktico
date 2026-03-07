@@ -1,4 +1,12 @@
 [
-  { "id": "b-1", "slug": "praktico", "name": "Praktico" }
+  {
+    "id": "b-1",
+    "slug": "praktico",
+    "name": "Praktico"
+  },
+  {
+    "id": "b-2",
+    "slug": "pixel-play",
+    "name": "Pixel Play"
+  }
 ]
-

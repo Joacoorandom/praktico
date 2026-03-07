@@ -1,11 +1,45 @@
 [
   {
-    "id": "p-1",
-    "slug": "test",
-    "name": "test",
-    "price": 10000,
-    "image": "/products/placeholder.svg",
-    "description": "",
-    "brand": "praktico"
+    "id": "p-2",
+    "slug": "mini-pixel",
+    "name": "Mini Pixel",
+    "price": 2990,
+    "image": "https://minecraft.wiki/images/Copper_Ingot_JE2_BE1.png",
+    "description": "Rango Mini Pixel en Pixel Play\n\nIn-game:\n• 5 homes\n• 3 ventas en /ah (subastas)\n• Recompensas diarias premium\n• Comandos: /back, /tpahere, /craft\n• 4 trabajos máx. (+10% XP Skills)\n• 5% descuento y 5% bonus al vender en /shop\n• Kit diario exclusivo Mini Pixel\n• Llave Rara extra al votar\n\nDiscord:\n• Rol Mini Pixel en el servidor de Discord\n\nPrecio: $2.990 CLP",
+    "featured": true,
+    "virtual": true,
+    "soldOut": false,
+    "categories": [
+      "objetos-de-juegos"
+    ]
+  },
+  {
+    "id": "p-3",
+    "slug": "pixel",
+    "name": "Pixel",
+    "price": 5990,
+    "image": "https://static.wikia.nocookie.net/minecraft_gamepedia/images/8/8a/Gold_Ingot_JE4_BE2.png/",
+    "description": "Rango Pixel en Pixel Play\n\nTodo lo de Mini Pixel, más:\n\nIn-game:\n• 8 homes\n• 6 ventas en /ah\n• Comandos extra: /anvil, /hat, /enderchest\n• 5 trabajos máx. (+25% XP Skills, +10% pago en Jobs)\n• 10% descuento y 10% bonus en /shop\n• Kit diario exclusivo Pixel\n• Llave Épica extra al votar\n• BetterRTP sin cooldown\n\nPrioridad:\n• Sugerencias atendidas más rápido\n• Tickets con prioridad\n\nDiscord:\n• Rol Pixel en el servidor de Discord\n\nPrecio: $5.990 CLP",
+    "brand": "pixel-play",
+    "categories": [
+      "objetos-de-juegos"
+    ],
+    "featured": true,
+    "virtual": true,
+    "soldOut": false
+  },
+  {
+    "id": "p-4",
+    "slug": "httpsmediaforgecdnnetavatarsthumbnails1022758256256638546808974574352webp",
+    "name": "Pixel+",
+    "price": 6990,
+    "image": "https://media.forgecdn.net/avatars/thumbnails/1022/758/256/256/638546808974574352.webp",
+    "description": "Rango Pixel+ en Pixel Play\n\nTodo lo de Pixel, más:\n\nIn-game:\n• 10 homes\n• 10 ventas en /ah\n• Comandos exclusivos: /nick, /feed, /heal (1 día cooldown), /workbench, /repair\n• 6 trabajos máx. (+50% XP Skills, +20% pago en Jobs)\n• 15% descuento y 15% bonus en /shop\n• Kit diario exclusivo Pixel+\n• Llave Legendaria extra al votar\n• BetterRTP sin cooldown + bypass eco\n\nPrioridad:\n• Sugerencias con prioridad máxima\n• Tickets atendidos primero\n\nDiscord:\n• Rol Pixel+ en el servidor de Discord\n\nPrecio: $6.990 CLP — ¡Solo $1.000 más que Pixel!",
+    "brand": "pixel-play",
+    "categories": [
+      "objetos-de-juegos"
+    ],
+    "featured": true,
+    "virtual": true
   }
 ]
