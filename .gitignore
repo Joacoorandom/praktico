@@ -8,6 +8,3 @@ node_modules/
 
 # Token GitHub del admin (se guarda en servidor, no en repo)
 admin-server/data/
-
-# Panel de admin (lo subís aparte)
-admin-server/
