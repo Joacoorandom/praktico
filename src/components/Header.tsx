@@ -9,6 +9,7 @@ import logoNegro from "../../Praktico-logo-negro.png";
 
 const NAV = [
   { href: "/", label: "Catálogo" },
+  { href: "/donar", label: "Donar" },
   { href: "/como-funciona", label: "Cómo funciona" },
   { href: "/checkout", label: "Carrito" },
 ];

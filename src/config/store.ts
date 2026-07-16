@@ -30,6 +30,41 @@ export const storeConfig = {
   shipping: {
     enabled: true,
     originComuna: "Providencia"
+  },
+
+  /** Donaciones para apoyar la reapertura de PixelPlay */
+  donations: {
+    enabled: true,
+    title: "¡Donanos para apoyar!",
+    subtitle:
+      "PixelPlay está en cierre temporal renovándose. Tu aporte ayuda a cubrir el hosting (~25 USD/mes) y a volver con una versión más sólida.",
+    minAmount: 1000,
+    gifts: [
+      {
+        id: "apoyo",
+        label: "Apoyo",
+        minAmount: 1000,
+        reward: "Agradecimiento público en Discord + mención en el anuncio de reapertura."
+      },
+      {
+        id: "impulsor",
+        label: "Impulsor",
+        minAmount: 3000,
+        reward: "Todo lo de Apoyo + rol especial Impulsor en Discord al reabrir."
+      },
+      {
+        id: "fundador",
+        label: "Fundador",
+        minAmount: 5000,
+        reward: "Todo lo anterior + kit de bienvenida al reabrir el servidor."
+      },
+      {
+        id: "patron",
+        label: "Patrón",
+        minAmount: 10000,
+        reward: "Todo lo anterior + prioridad en ranks/eventos de la nueva temporada."
+      }
+    ]
   }
 } as const;
 

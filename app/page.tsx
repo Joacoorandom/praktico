@@ -1,5 +1,6 @@
 import { storeConfig } from "@/config/store";
 import { OffersPanel } from "@/components/OffersPanel";
+import { DonationBanner } from "@/components/DonationBanner";
 import { CatalogWithFilters } from "@/components/CatalogWithFilters";
 import { getProducts } from "@/lib/products";
 import { getBrands, getCategories } from "@/lib/taxonomy";
@@ -19,6 +20,7 @@ export default function HomePage() {
       </section>
 
       <div className="container">
+        <DonationBanner />
         <OffersPanel products={products} />
 
         <span className="section-label">Productos</span>
