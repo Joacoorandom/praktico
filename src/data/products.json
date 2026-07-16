@@ -43,24 +43,5 @@
     "featured": true,
     "virtual": true,
     "soldOut": true
-  },
-  {
-    "id": "p-5",
-    "slug": "polera-pixel-play-no-comprar-test",
-    "name": "Polera Pixel Play - NO COMPRAR - TEST",
-    "price": 15000,
-    "image": "/products/placeholder.svg",
-    "description": "Esta merch del servidor incluye codigos para reclamar en el servidor, al comprarla, te llega una polera de merch y te viene con 2 codigos para reclamar Pixel+",
-    "brand": "pixel-play",
-    "categories": [
-      "objetos-de-juegos"
-    ],
-    "soldOut": true,
-    "shipping": {
-      "weightKg": 0.5,
-      "lengthCm": 20,
-      "widthCm": 15,
-      "heightCm": 10
-    }
   }
 ]
